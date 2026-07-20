@@ -67,32 +67,38 @@ function catmullRomToBezierPath(points) {
  * Profil générique d'un bord de pièce, exprimé en coordonnées locales :
  * x = position le long du bord (0..len), y = décalage perpendiculaire.
  * La forme "champignon" (col étroit + bulbe) est ce qui crée
- * l'emboîtement classique des puzzles à taquets.
+ * l'emboîtement classique des puzzles à taquets. Les positions sont
+ * exprimées relativement au centre du taquet (0.5 par défaut), qui est
+ * lui-même randomisé par pièce pour que le col/bulbe ne soit pas
+ * systématiquement au milieu du bord.
  * ------------------------------------------------------- */
-const TAB_PROFILE = [
-  [0.000, 0.00],
-  [0.300, 0.00],
-  [0.360, 0.20],
-  [0.320, 0.55],
-  [0.360, 0.85],
-  [0.500, 1.00],
-  [0.640, 0.85],
-  [0.680, 0.55],
-  [0.640, 0.20],
-  [0.700, 0.00],
-  [1.000, 0.00],
+const TAB_RELATIVE_PROFILE = [
+  [-0.200, 0.00],
+  [-0.140, 0.20],
+  [-0.180, 0.55],
+  [-0.140, 0.85],
+  [0.000, 1.00],
+  [0.140, 0.85],
+  [0.180, 0.55],
+  [0.140, 0.20],
+  [0.200, 0.00],
 ];
 
 function tabProfilePoints(len, flip, tabSizeFrac, jitterAmt, rnd) {
   const depth = len * tabSizeFrac * flip * (0.85 + rnd() * 0.3);
-  const tJitter = jitterAmt * 0.05;
-  return TAB_PROFILE.map(([t, o], idx) => {
-    let tt = t;
-    if (idx > 0 && idx < TAB_PROFILE.length - 1) {
-      tt += (rnd() - 0.5) * tJitter;
-    }
-    return { x: tt * len, y: o * depth };
-  });
+  const tJitter = 0.02 + jitterAmt * 0.06;
+  const yWobbleRange = 0.10 + jitterAmt * 0.25;
+  const centerSpread = 0.15 + jitterAmt * 0.35;
+  const center = 0.5 + (rnd() - 0.5) * centerSpread;
+
+  const points = [{ x: 0, y: 0 }];
+  for (const [relT, o] of TAB_RELATIVE_PROFILE) {
+    const tt = center + relT + (rnd() - 0.5) * tJitter;
+    const yWobble = 1 + (rnd() - 0.5) * yWobbleRange;
+    points.push({ x: tt * len, y: o * depth * yWobble });
+  }
+  points.push({ x: len, y: 0 });
+  return points;
 }
 
 /* ---------------- Style "organique" ----------------
