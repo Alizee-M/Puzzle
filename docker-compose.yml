@@ -1,0 +1,8 @@
+services:
+  puzzle-laser-generator:
+    build: .
+    image: puzzle-laser-generator:latest
+    container_name: puzzle-laser-generator
+    restart: unless-stopped
+    ports:
+      - "8080:80"

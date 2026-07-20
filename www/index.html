@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Puzzle Laser Generator</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <h1>🧩 Puzzle Laser Generator</h1>
+  <p class="subtitle">Génère un puzzle photo à taquets classiques, exportable en SVG pour découpe laser (xTool M2).</p>
+</header>
+
+<main>
+  <section class="panel controls">
+    <h2>1. Photo</h2>
+    <label class="field">
+      <span>Fichier image</span>
+      <input type="file" id="photoInput" accept="image/*">
+    </label>
+
+    <h2>2. Dimensions du puzzle</h2>
+    <div class="field-row">
+      <label class="field">
+        <span>Largeur (mm)</span>
+        <input type="number" id="widthMM" value="297" min="10" step="1">
+      </label>
+      <label class="field">
+        <span>Hauteur (mm)</span>
+        <input type="number" id="heightMM" value="210" min="10" step="1">
+      </label>
+    </div>
+    <label class="field checkbox">
+      <input type="checkbox" id="lockRatio" checked>
+      <span>Conserver le ratio de la photo</span>
+    </label>
+
+    <h2>3. Découpage</h2>
+    <div class="field-row">
+      <label class="field">
+        <span>Colonnes</span>
+        <input type="number" id="cols" value="10" min="2" max="60" step="1">
+      </label>
+      <label class="field">
+        <span>Lignes</span>
+        <input type="number" id="rows" value="7" min="2" max="60" step="1">
+      </label>
+    </div>
+    <p class="piece-count">Total : <strong id="pieceCountLabel">70</strong> pièces</p>
+
+    <h2>4. Forme des taquets</h2>
+    <label class="field">
+      <span>Taille des taquets (<span id="tabSizeValue">20</span>%)</span>
+      <input type="range" id="tabSize" min="10" max="30" value="20" step="1">
+    </label>
+    <label class="field">
+      <span>Irrégularité (<span id="jitterValue">40</span>%)</span>
+      <input type="range" id="jitter" min="0" max="100" value="40" step="1">
+    </label>
+    <div class="field-row">
+      <label class="field">
+        <span>Graine aléatoire</span>
+        <input type="number" id="seed" value="1" step="1">
+      </label>
+      <button type="button" id="randomizeBtn" class="btn-secondary">🎲 Randomiser</button>
+    </div>
+
+    <h2>5. Export laser</h2>
+    <label class="field">
+      <span>Couleur du trait de découpe</span>
+      <input type="color" id="strokeColor" value="#ff0000">
+    </label>
+    <label class="field checkbox">
+      <input type="checkbox" id="includePhoto" checked>
+      <span>Inclure la photo en calque de référence (raster)</span>
+    </label>
+
+    <div class="actions">
+      <button type="button" id="generateBtn" class="btn-primary">Générer l'aperçu</button>
+      <button type="button" id="downloadBtn" class="btn-primary" disabled>⬇ Télécharger le SVG</button>
+    </div>
+    <p class="hint">Le SVG exporté utilise des unités en millimètres (viewBox = dimensions réelles) et un trait fin de la couleur choisie, prêt pour l'import dans xTool Creative Space en mode découpe vectorielle.</p>
+  </section>
+
+  <section class="panel preview-panel">
+    <h2>Aperçu</h2>
+    <div id="preview" class="preview"></div>
+  </section>
+</main>
+
+<footer>
+  <p>Puzzle Laser Generator — app statique HTML/CSS/JS, aucune dépendance externe.</p>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>
