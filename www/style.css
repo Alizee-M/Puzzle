@@ -74,6 +74,7 @@ main {
 .field input[type="text"],
 .field input[type="number"],
 .field input[type="file"] {
+  width: 100%;
   background: #0f1115;
   border: 1px solid var(--border);
   color: var(--text);
@@ -90,6 +91,11 @@ main {
   grid-template-columns: 1fr 1fr;
   gap: 12px;
   align-items: end;
+  min-width: 0;
+}
+
+.field-row .field {
+  min-width: 0;
 }
 
 .field.checkbox {
