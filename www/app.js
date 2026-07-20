@@ -24,15 +24,26 @@ const els = {
   seed: document.getElementById('seed'),
   randomizeBtn: document.getElementById('randomizeBtn'),
   includePhoto: document.getElementById('includePhoto'),
+  photoModeGray: document.getElementById('photoModeGray'),
+  photoModeColor: document.getElementById('photoModeColor'),
   includeBorder: document.getElementById('includeBorder'),
   strokeColor: document.getElementById('strokeColor'),
   generateBtn: document.getElementById('generateBtn'),
   downloadBtn: document.getElementById('downloadBtn'),
   preview: document.getElementById('preview'),
+  zoomInBtn: document.getElementById('zoomInBtn'),
+  zoomOutBtn: document.getElementById('zoomOutBtn'),
+  zoomResetBtn: document.getElementById('zoomResetBtn'),
+  zoomLevelLabel: document.getElementById('zoomLevelLabel'),
 };
 
 let imageAspect = null;
-let engraveDataURL = null;
+let grayDataURL = null;
+let colorDataURL = null;
+let zoomPct = 100;
+const ZOOM_MIN = 25;
+const ZOOM_MAX = 400;
+const ZOOM_STEP = 25;
 let lastSVGString = null;
 
 function updatePieceCount() {
@@ -41,10 +52,9 @@ function updatePieceCount() {
   els.pieceCountLabel.textContent = cols * rows;
 }
 
-/* Convertit une image en niveaux de gris (luminance), redimensionnée pour
- * rester raisonnable à intégrer en base64 dans le SVG, prête pour la
- * gravure laser (calque "engrave"). */
-function toGrayscaleDataURL(img, maxDim = 2000) {
+/* Redimensionne une image sur un canvas pour rester raisonnable à intégrer
+ * en base64 dans le SVG. */
+function resizeToCanvas(img, maxDim) {
   let { width, height } = img;
   const scale = Math.min(1, maxDim / Math.max(width, height));
   width = Math.max(1, Math.round(width * scale));
@@ -55,8 +65,19 @@ function toGrayscaleDataURL(img, maxDim = 2000) {
   canvas.height = height;
   const ctx = canvas.getContext('2d');
   ctx.drawImage(img, 0, 0, width, height);
+  return { canvas, ctx };
+}
 
-  const imageData = ctx.getImageData(0, 0, width, height);
+function toColorDataURL(img, maxDim = 2000) {
+  const { canvas } = resizeToCanvas(img, maxDim);
+  return canvas.toDataURL('image/png');
+}
+
+/* Convertit une image en niveaux de gris (luminance), prête pour la
+ * gravure laser (calque "engrave"). */
+function toGrayscaleDataURL(img, maxDim = 2000) {
+  const { canvas, ctx } = resizeToCanvas(img, maxDim);
+  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
   const data = imageData.data;
   for (let i = 0; i < data.length; i += 4) {
     const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
@@ -75,7 +96,8 @@ function loadImage(file) {
       if (els.lockRatio.checked) {
         els.heightMM.value = (parseFloat(els.widthMM.value) / imageAspect).toFixed(1);
       }
-      engraveDataURL = toGrayscaleDataURL(img);
+      grayDataURL = toGrayscaleDataURL(img);
+      colorDataURL = toColorDataURL(img);
     };
     img.src = e.target.result;
   };
@@ -94,6 +116,7 @@ function renderPreview() {
   const strokeColor = els.strokeColor.value;
   const includePhoto = els.includePhoto.checked;
   const includeBorder = els.includeBorder.checked;
+  const engraveDataURL = els.photoModeColor.checked ? colorDataURL : grayDataURL;
 
   if (!W || !H || !cols || !rows) return;
 
@@ -103,6 +126,48 @@ function renderPreview() {
   });
   els.preview.innerHTML = lastSVGString;
   els.downloadBtn.disabled = false;
+  applyZoom();
+}
+
+function applyZoom() {
+  const svg = els.preview.querySelector('svg');
+  if (svg) {
+    svg.style.width = `${zoomPct}%`;
+    svg.style.maxWidth = `${zoomPct}%`;
+  }
+  els.zoomLevelLabel.textContent = `${zoomPct}%`;
+}
+
+function setZoom(pct) {
+  zoomPct = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, pct));
+  applyZoom();
+}
+
+function enablePreviewPan() {
+  let isDragging = false;
+  let startX = 0;
+  let startY = 0;
+  let startScrollLeft = 0;
+  let startScrollTop = 0;
+
+  els.preview.addEventListener('mousedown', (e) => {
+    if (e.target.closest('svg') === null) return;
+    isDragging = true;
+    startX = e.clientX;
+    startY = e.clientY;
+    startScrollLeft = els.preview.scrollLeft;
+    startScrollTop = els.preview.scrollTop;
+  });
+
+  window.addEventListener('mousemove', (e) => {
+    if (!isDragging) return;
+    els.preview.scrollLeft = startScrollLeft - (e.clientX - startX);
+    els.preview.scrollTop = startScrollTop - (e.clientY - startY);
+  });
+
+  window.addEventListener('mouseup', () => {
+    isDragging = false;
+  });
 }
 
 function downloadSVG() {
@@ -132,6 +197,14 @@ els.widthMM.addEventListener('input', () => {
 els.cols.addEventListener('input', updatePieceCount);
 els.rows.addEventListener('input', updatePieceCount);
 
+function updatePhotoModeAvailability() {
+  const disabled = !els.includePhoto.checked;
+  els.photoModeGray.disabled = disabled;
+  els.photoModeColor.disabled = disabled;
+}
+els.includePhoto.addEventListener('change', updatePhotoModeAvailability);
+updatePhotoModeAvailability();
+
 els.applyPieceCountBtn.addEventListener('click', () => {
   const target = parseInt(els.targetPieceCount.value, 10);
   if (!target) return;
@@ -156,5 +229,10 @@ els.randomizeBtn.addEventListener('click', () => {
 
 els.generateBtn.addEventListener('click', renderPreview);
 els.downloadBtn.addEventListener('click', downloadSVG);
+
+els.zoomInBtn.addEventListener('click', () => setZoom(zoomPct + ZOOM_STEP));
+els.zoomOutBtn.addEventListener('click', () => setZoom(zoomPct - ZOOM_STEP));
+els.zoomResetBtn.addEventListener('click', () => setZoom(100));
+enablePreviewPan();
 
 updatePieceCount();

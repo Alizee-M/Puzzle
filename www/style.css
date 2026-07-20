@@ -152,23 +152,55 @@ button {
   margin-top: 12px;
 }
 
+.preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.preview-header h2 { margin: 0; }
+
+.zoom-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.zoom-controls button {
+  padding: 6px 12px;
+  font-size: 0.9rem;
+}
+
+.zoom-controls span {
+  min-width: 44px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
 .preview {
   width: 100%;
   min-height: 400px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  text-align: center;
   background: #0f1115;
   border: 1px dashed var(--border);
   border-radius: 8px;
   overflow: auto;
   padding: 12px;
+  margin-top: 12px;
 }
 
 .preview svg {
   max-width: 100%;
   height: auto;
   background: #ffffff;
+  cursor: grab;
+}
+
+.preview svg:active {
+  cursor: grabbing;
 }
 
 footer {

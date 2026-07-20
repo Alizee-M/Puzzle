@@ -84,8 +84,18 @@
     </label>
     <label class="field checkbox">
       <input type="checkbox" id="includePhoto" checked>
-      <span>Inclure la photo en calque de gravure (niveaux de gris)</span>
+      <span>Inclure la photo en calque de gravure</span>
     </label>
+    <div class="field-row" id="photoModeRow">
+      <label class="field checkbox">
+        <input type="radio" name="photoMode" id="photoModeGray" value="gray" checked>
+        <span>Niveaux de gris</span>
+      </label>
+      <label class="field checkbox">
+        <input type="radio" name="photoMode" id="photoModeColor" value="color">
+        <span>Couleur d'origine</span>
+      </label>
+    </div>
     <label class="field checkbox">
       <input type="checkbox" id="includeBorder" checked>
       <span>Inclure le contour extérieur (bordure) dans la découpe</span>
@@ -99,7 +109,15 @@
   </section>
 
   <section class="panel preview-panel">
-    <h2>Aperçu</h2>
+    <div class="preview-header">
+      <h2>Aperçu</h2>
+      <div class="zoom-controls">
+        <button type="button" id="zoomOutBtn" class="btn-secondary" title="Zoom arrière">−</button>
+        <span id="zoomLevelLabel">100%</span>
+        <button type="button" id="zoomInBtn" class="btn-secondary" title="Zoom avant">+</button>
+        <button type="button" id="zoomResetBtn" class="btn-secondary" title="Ajuster à la fenêtre">Ajuster</button>
+      </div>
+    </div>
     <div id="preview" class="preview"></div>
   </section>
 </main>
