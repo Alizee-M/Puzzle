@@ -22,6 +22,7 @@ const els = {
   seed: document.getElementById('seed'),
   randomizeBtn: document.getElementById('randomizeBtn'),
   includePhoto: document.getElementById('includePhoto'),
+  includeBorder: document.getElementById('includeBorder'),
   strokeColor: document.getElementById('strokeColor'),
   generateBtn: document.getElementById('generateBtn'),
   downloadBtn: document.getElementById('downloadBtn'),
@@ -148,13 +149,15 @@ function buildVerticalBoundary(x0, rows, cellH, style, tabSizeFrac, jitterAmt, r
  * Construit le réseau complet de traits de découpe du puzzle.
  * @returns {string[]} tableau de "d" (path data) SVG, en millimètres.
  */
-function generatePuzzleCutPaths(W, H, cols, rows, style, tabSizeFrac, jitterAmt, seed) {
+function generatePuzzleCutPaths(W, H, cols, rows, style, tabSizeFrac, jitterAmt, seed, includeBorder) {
   const rnd = mulberry32(seed);
   const cellW = W / cols;
   const cellH = H / rows;
   const d = [];
 
-  d.push(`M 0,0 L ${W},0 L ${W},${H} L 0,${H} Z`);
+  if (includeBorder) {
+    d.push(`M 0,0 L ${W},0 L ${W},${H} L 0,${H} Z`);
+  }
 
   for (let r = 1; r < rows; r++) {
     const pts = buildHorizontalBoundary(r * cellH, cols, cellW, style, tabSizeFrac, jitterAmt, rnd);
@@ -170,8 +173,8 @@ function generatePuzzleCutPaths(W, H, cols, rows, style, tabSizeFrac, jitterAmt,
 }
 
 /* ---------------- Assemblage du SVG final ---------------- */
-function buildSVG({ W, H, cols, rows, style, tabSizeFrac, jitterAmt, seed, strokeColor, includePhoto }) {
-  const cutPaths = generatePuzzleCutPaths(W, H, cols, rows, style, tabSizeFrac, jitterAmt, seed);
+function buildSVG({ W, H, cols, rows, style, tabSizeFrac, jitterAmt, seed, strokeColor, includePhoto, includeBorder }) {
+  const cutPaths = generatePuzzleCutPaths(W, H, cols, rows, style, tabSizeFrac, jitterAmt, seed, includeBorder);
   const strokeWidth = 0.1; // mm — trait fin adapté à la découpe vectorielle laser
 
   let photoLayer = '';
@@ -225,10 +228,11 @@ function renderPreview() {
   const seed = parseInt(els.seed.value, 10) || 1;
   const strokeColor = els.strokeColor.value;
   const includePhoto = els.includePhoto.checked;
+  const includeBorder = els.includeBorder.checked;
 
   if (!W || !H || !cols || !rows) return;
 
-  lastSVGString = buildSVG({ W, H, cols, rows, style, tabSizeFrac, jitterAmt, seed, strokeColor, includePhoto });
+  lastSVGString = buildSVG({ W, H, cols, rows, style, tabSizeFrac, jitterAmt, seed, strokeColor, includePhoto, includeBorder });
   els.preview.innerHTML = lastSVGString;
   els.downloadBtn.disabled = false;
 }
