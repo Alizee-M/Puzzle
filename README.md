@@ -39,7 +39,7 @@ tout autre système (pas d'intégration Home Assistant).
 docker compose up -d --build
 ```
 
-Puis ouvrir <http://localhost:8080/> (port modifiable dans
+Puis ouvrir <http://localhost:5052/> (port modifiable dans
 `docker-compose.yml`).
 
 Pour un déploiement via Portainer : créer une nouvelle **Stack**, coller le
@@ -49,7 +49,7 @@ contenu de `docker-compose.yml` (ou pointer vers ce dépôt Git), et déployer.
 
 ```bash
 docker build -t puzzle-laser-generator .
-docker run -d --name puzzle-laser-generator -p 8080:80 puzzle-laser-generator
+docker run -d --name puzzle-laser-generator -p 5052:80 puzzle-laser-generator
 ```
 
 ## Structure du projet

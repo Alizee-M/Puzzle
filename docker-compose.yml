@@ -5,4 +5,4 @@ services:
     container_name: puzzle-laser-generator
     restart: unless-stopped
     ports:
-      - "8080:80"
+      - "5052:80"
