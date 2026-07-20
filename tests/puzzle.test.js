@@ -3,6 +3,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const {
+  computeGridForPieceCount,
   mulberry32,
   catmullRomToBezierPath,
   TAB_RELATIVE_PROFILE,
@@ -12,6 +13,23 @@ const {
   generatePuzzleCutPaths,
   buildSVG,
 } = require('../www/puzzle.js');
+
+test('computeGridForPieceCount returns cols*rows close to the target', () => {
+  const { cols, rows } = computeGridForPieceCount(300, 297 / 210);
+  assert.ok(Math.abs(cols * rows - 300) <= 30, `${cols}x${rows}=${cols * rows} too far from 300`);
+});
+
+test('computeGridForPieceCount respects the aspect ratio (cols/rows close to aspect)', () => {
+  const aspect = 297 / 210; // ~1.414 (paysage)
+  const { cols, rows } = computeGridForPieceCount(300, aspect);
+  const gridAspect = cols / rows;
+  assert.ok(Math.abs(gridAspect - aspect) < 0.35, `grid aspect ${gridAspect} too far from ${aspect}`);
+});
+
+test('computeGridForPieceCount never returns less than 2 columns or rows', () => {
+  const { cols, rows } = computeGridForPieceCount(1, 5);
+  assert.ok(cols >= 2 && rows >= 2);
+});
 
 test('mulberry32 is deterministic for a given seed', () => {
   const a = mulberry32(42);
@@ -150,7 +168,7 @@ test('generatePuzzleCutPaths differs for different seeds', () => {
 test('buildSVG sizes the viewBox to W/H with no margin when the border is excluded', () => {
   const svg = buildSVG({
     W: 100, H: 80, cols: 3, rows: 2, tabSizeFrac: 0.2, jitterAmt: 0.4, centerTabs: false,
-    seed: 1, strokeColor: '#ff0000', includePhoto: false, includeBorder: false, imageDataURL: null,
+    seed: 1, strokeColor: '#ff0000', includePhoto: false, includeBorder: false, engraveDataURL: null,
   });
   assert.match(svg, /viewBox="0 0 100 80"/);
   assert.match(svg, /width="100mm" height="80mm"/);
@@ -159,26 +177,26 @@ test('buildSVG sizes the viewBox to W/H with no margin when the border is exclud
 test('buildSVG adds a 1mm margin on each side when the border is included', () => {
   const svg = buildSVG({
     W: 100, H: 80, cols: 3, rows: 2, tabSizeFrac: 0.2, jitterAmt: 0.4, centerTabs: false,
-    seed: 1, strokeColor: '#ff0000', includePhoto: false, includeBorder: true, imageDataURL: null,
+    seed: 1, strokeColor: '#ff0000', includePhoto: false, includeBorder: true, engraveDataURL: null,
   });
   assert.match(svg, /viewBox="0 0 102 82"/);
   assert.match(svg, /width="102mm" height="82mm"/);
 });
 
-test('buildSVG only embeds the photo layer when includePhoto is true and imageDataURL is set', () => {
+test('buildSVG only embeds the engrave layer when includePhoto is true and engraveDataURL is set', () => {
   const base = {
     W: 100, H: 80, cols: 3, rows: 2, tabSizeFrac: 0.2, jitterAmt: 0.4, centerTabs: false,
     seed: 1, strokeColor: '#ff0000', includeBorder: false,
   };
-  assert.doesNotMatch(buildSVG({ ...base, includePhoto: true, imageDataURL: null }), /<image/);
-  assert.doesNotMatch(buildSVG({ ...base, includePhoto: false, imageDataURL: 'data:image/png;base64,xx' }), /<image/);
-  assert.match(buildSVG({ ...base, includePhoto: true, imageDataURL: 'data:image/png;base64,xx' }), /<image/);
+  assert.doesNotMatch(buildSVG({ ...base, includePhoto: true, engraveDataURL: null }), /<image/);
+  assert.doesNotMatch(buildSVG({ ...base, includePhoto: false, engraveDataURL: 'data:image/png;base64,xx' }), /<image/);
+  assert.match(buildSVG({ ...base, includePhoto: true, engraveDataURL: 'data:image/png;base64,xx' }), /<image/);
 });
 
 test('buildSVG uses the requested stroke color for the cut layer', () => {
   const svg = buildSVG({
     W: 100, H: 80, cols: 3, rows: 2, tabSizeFrac: 0.2, jitterAmt: 0.4, centerTabs: false,
-    seed: 1, strokeColor: '#00ff00', includePhoto: false, includeBorder: true, imageDataURL: null,
+    seed: 1, strokeColor: '#00ff00', includePhoto: false, includeBorder: true, engraveDataURL: null,
   });
   assert.match(svg, /stroke="#00ff00"/);
 });
@@ -188,7 +206,7 @@ test('buildSVG produces one <path> per cut path returned by generatePuzzleCutPat
   const rows = 3;
   const svg = buildSVG({
     W: 200, H: 150, cols, rows, tabSizeFrac: 0.2, jitterAmt: 0.4, centerTabs: false,
-    seed: 1, strokeColor: '#ff0000', includePhoto: false, includeBorder: true, imageDataURL: null,
+    seed: 1, strokeColor: '#ff0000', includePhoto: false, includeBorder: true, engraveDataURL: null,
   });
   const pathCount = (svg.match(/<path /g) || []).length;
   assert.equal(pathCount, 1 + (rows - 1) + (cols - 1));

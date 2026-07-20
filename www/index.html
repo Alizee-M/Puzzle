@@ -39,6 +39,13 @@
     <h2>3. Découpage</h2>
     <div class="field-row">
       <label class="field">
+        <span>Nombre de pièces visé</span>
+        <input type="number" id="targetPieceCount" placeholder="ex. 300" min="4" step="1">
+      </label>
+      <button type="button" id="applyPieceCountBtn" class="btn-secondary">Appliquer</button>
+    </div>
+    <div class="field-row">
+      <label class="field">
         <span>Colonnes</span>
         <input type="number" id="cols" value="10" min="2" max="60" step="1">
       </label>
@@ -77,7 +84,7 @@
     </label>
     <label class="field checkbox">
       <input type="checkbox" id="includePhoto" checked>
-      <span>Inclure la photo en calque de référence (raster)</span>
+      <span>Inclure la photo en calque de gravure (niveaux de gris)</span>
     </label>
     <label class="field checkbox">
       <input type="checkbox" id="includeBorder" checked>

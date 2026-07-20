@@ -7,6 +7,22 @@
  * (tests unitaires, "node:test") via module.exports.
  * -------------------------------------------------------------------- */
 
+/**
+ * Calcule un nombre de colonnes/lignes proche du nombre de pièces visé,
+ * en respectant au mieux le ratio largeur/hauteur du puzzle.
+ */
+function computeGridForPieceCount(targetCount, aspect) {
+  const safeAspect = aspect > 0 ? aspect : 1;
+  const safeTarget = Math.max(4, Math.round(targetCount) || 4);
+
+  let rows = Math.round(Math.sqrt(safeTarget / safeAspect));
+  rows = Math.max(2, rows);
+  let cols = Math.round(safeTarget / rows);
+  cols = Math.max(2, cols);
+
+  return { cols, rows };
+}
+
 /* ---------------- Seeded PRNG (mulberry32) ---------------- */
 function mulberry32(seed) {
   let a = seed >>> 0;
@@ -123,15 +139,15 @@ function generatePuzzleCutPaths(W, H, cols, rows, tabSizeFrac, jitterAmt, center
 }
 
 /* ---------------- Assemblage du SVG final ---------------- */
-function buildSVG({ W, H, cols, rows, tabSizeFrac, jitterAmt, centerTabs, seed, strokeColor, includePhoto, includeBorder, imageDataURL }) {
+function buildSVG({ W, H, cols, rows, tabSizeFrac, jitterAmt, centerTabs, seed, strokeColor, includePhoto, includeBorder, engraveDataURL }) {
   const cutPaths = generatePuzzleCutPaths(W, H, cols, rows, tabSizeFrac, jitterAmt, centerTabs, seed, includeBorder);
   const strokeWidth = 0.1; // mm — trait fin adapté à la découpe vectorielle laser
   const margin = includeBorder ? 1 : 0; // mm — évite que le contour extérieur soit rogné par le viewBox
 
-  let photoLayer = '';
-  if (includePhoto && imageDataURL) {
-    photoLayer = `<g id="photo">
-    <image x="0" y="0" width="${W}" height="${H}" href="${imageDataURL}" preserveAspectRatio="xMidYMid slice" />
+  let engraveLayer = '';
+  if (includePhoto && engraveDataURL) {
+    engraveLayer = `<g id="engrave">
+    <image x="0" y="0" width="${W}" height="${H}" href="${engraveDataURL}" preserveAspectRatio="xMidYMid slice" />
   </g>`;
   }
 
@@ -144,13 +160,14 @@ function buildSVG({ W, H, cols, rows, tabSizeFrac, jitterAmt, centerTabs, seed, 
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${totalW}mm" height="${totalH}mm" viewBox="0 0 ${totalW} ${totalH}">
   <g transform="translate(${margin}, ${margin})">
-  ${photoLayer}
+  ${engraveLayer}
   ${cutLayer}
   </g>
 </svg>`;
 }
 
 const PuzzleGenerator = {
+  computeGridForPieceCount,
   mulberry32,
   catmullRomToBezierPath,
   TAB_RELATIVE_PROFILE,

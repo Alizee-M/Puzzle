@@ -9,14 +9,17 @@ du SVG en unités millimétriques : LightBurn, xTool Creative Space, etc.).
 
 - Upload d'une photo, aperçu en direct du découpage.
 - Dimensions du puzzle en millimètres, avec verrouillage du ratio de la photo.
-- Nombre de colonnes / lignes configurable (nombre de pièces).
+- Nombre de colonnes / lignes configurable directement, ou en visant un
+  nombre de pièces total (calcul automatique du meilleur agencement
+  colonnes/lignes selon le ratio du puzzle).
 - Forme des taquets réglable (taille, irrégularité, graine aléatoire pour
-  reproduire ou varier un motif).
+  reproduire ou varier un motif), avec option pour les garder tous centrés.
 - Export SVG :
   - unités en millimètres (`viewBox` = dimensions réelles),
   - trait de découpe fin (0.1 mm), couleur configurable,
-  - calque photo optionnel (image raster intégrée en base64) pour repère
-    visuel avant découpe/gravure.
+  - calque de gravure optionnel : la photo convertie en niveaux de gris et
+    intégrée en base64, exploitable directement par le logiciel laser pour
+    graver l'image sur le support avant découpe.
 
 ## Utilisation en local (sans Docker)
 
@@ -63,7 +66,10 @@ start-mac-linux.sh        # lanceur local macOS/Linux
 www/
   index.html
   style.css
-  app.js                  # génération du puzzle + export SVG
+  puzzle.js               # génération du puzzle + export SVG (sans DOM, testable)
+  app.js                  # câblage de l'interface (DOM, canvas, événements)
+tests/
+  puzzle.test.js          # tests unitaires (node --test), sans dépendance
 ```
 
 ## Notes découpe laser
@@ -74,6 +80,15 @@ www/
 - Le calque de découpe (`id="cut"`) contient uniquement des traits fins
   (`stroke-width: 0.1mm`) sans remplissage, pour être reconnu comme
   vectoriel/découpe par la plupart des logiciels laser.
-- Le calque photo (`id="photo"`), s'il est inclus, est une image raster :
-  à utiliser comme repère de calage ou pour une gravure séparée, pas pour
-  la découpe.
+- Le calque de gravure (`id="engrave"`), s'il est inclus, contient la photo
+  convertie en niveaux de gris (image raster) : destiné à une opération de
+  gravure, pas de découpe.
+
+## Tests
+
+Suite de tests unitaires sur la logique de génération (`www/puzzle.js`),
+sans dépendance externe :
+
+```bash
+node --test
+```

@@ -14,6 +14,8 @@ const els = {
   cols: document.getElementById('cols'),
   rows: document.getElementById('rows'),
   pieceCountLabel: document.getElementById('pieceCountLabel'),
+  targetPieceCount: document.getElementById('targetPieceCount'),
+  applyPieceCountBtn: document.getElementById('applyPieceCountBtn'),
   tabSize: document.getElementById('tabSize'),
   tabSizeValue: document.getElementById('tabSizeValue'),
   jitter: document.getElementById('jitter'),
@@ -29,8 +31,8 @@ const els = {
   preview: document.getElementById('preview'),
 };
 
-let imageDataURL = null;
 let imageAspect = null;
+let engraveDataURL = null;
 let lastSVGString = null;
 
 function updatePieceCount() {
@@ -39,18 +41,43 @@ function updatePieceCount() {
   els.pieceCountLabel.textContent = cols * rows;
 }
 
+/* Convertit une image en niveaux de gris (luminance), redimensionnée pour
+ * rester raisonnable à intégrer en base64 dans le SVG, prête pour la
+ * gravure laser (calque "engrave"). */
+function toGrayscaleDataURL(img, maxDim = 2000) {
+  let { width, height } = img;
+  const scale = Math.min(1, maxDim / Math.max(width, height));
+  width = Math.max(1, Math.round(width * scale));
+  height = Math.max(1, Math.round(height * scale));
+
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(img, 0, 0, width, height);
+
+  const imageData = ctx.getImageData(0, 0, width, height);
+  const data = imageData.data;
+  for (let i = 0; i < data.length; i += 4) {
+    const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+    data[i] = data[i + 1] = data[i + 2] = gray;
+  }
+  ctx.putImageData(imageData, 0, 0);
+  return canvas.toDataURL('image/png');
+}
+
 function loadImage(file) {
   const reader = new FileReader();
   reader.onload = (e) => {
-    imageDataURL = e.target.result;
     const img = new Image();
     img.onload = () => {
       imageAspect = img.width / img.height;
       if (els.lockRatio.checked) {
         els.heightMM.value = (parseFloat(els.widthMM.value) / imageAspect).toFixed(1);
       }
+      engraveDataURL = toGrayscaleDataURL(img);
     };
-    img.src = imageDataURL;
+    img.src = e.target.result;
   };
   reader.readAsDataURL(file);
 }
@@ -72,7 +99,7 @@ function renderPreview() {
 
   lastSVGString = PuzzleGenerator.buildSVG({
     W, H, cols, rows, tabSizeFrac, jitterAmt, centerTabs, seed,
-    strokeColor, includePhoto, includeBorder, imageDataURL,
+    strokeColor, includePhoto, includeBorder, engraveDataURL,
   });
   els.preview.innerHTML = lastSVGString;
   els.downloadBtn.disabled = false;
@@ -104,6 +131,17 @@ els.widthMM.addEventListener('input', () => {
 
 els.cols.addEventListener('input', updatePieceCount);
 els.rows.addEventListener('input', updatePieceCount);
+
+els.applyPieceCountBtn.addEventListener('click', () => {
+  const target = parseInt(els.targetPieceCount.value, 10);
+  if (!target) return;
+  const W = parseFloat(els.widthMM.value) || 1;
+  const H = parseFloat(els.heightMM.value) || 1;
+  const { cols, rows } = PuzzleGenerator.computeGridForPieceCount(target, W / H);
+  els.cols.value = cols;
+  els.rows.value = rows;
+  updatePieceCount();
+});
 
 els.tabSize.addEventListener('input', () => {
   els.tabSizeValue.textContent = els.tabSize.value;
