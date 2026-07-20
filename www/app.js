@@ -86,52 +86,22 @@ const TAB_RELATIVE_PROFILE = [
 
 function tabProfilePoints(len, flip, tabSizeFrac, jitterAmt, rnd) {
   const depth = len * tabSizeFrac * flip * (0.85 + rnd() * 0.3);
-  const tJitter = 0.02 + jitterAmt * 0.06;
-  const yWobbleRange = 0.10 + jitterAmt * 0.25;
   const centerSpread = 0.15 + jitterAmt * 0.35;
   const center = 0.5 + (rnd() - 0.5) * centerSpread;
 
   const points = [{ x: 0, y: 0 }];
   for (const [relT, o] of TAB_RELATIVE_PROFILE) {
-    const tt = center + relT + (rnd() - 0.5) * tJitter;
-    const yWobble = 1 + (rnd() - 0.5) * yWobbleRange;
-    points.push({ x: tt * len, y: o * depth * yWobble });
+    points.push({ x: (center + relT) * len, y: o * depth });
   }
   points.push({ x: len, y: 0 });
   return points;
 }
 
-/* ---------------- Style "organique" ----------------
- * Même bord partagé grille (topologie identique au style classique),
- * mais sans col/bulbe : une courbe fluide et irrégulière avec plusieurs
- * ondulations, façon découpe artisanale à la main.
- * ------------------------------------------------------- */
-const ORGANIC_STEPS = [0.15, 0.30, 0.45, 0.60, 0.75, 0.90];
-
-function organicProfilePoints(len, tabSizeFrac, jitterAmt, rnd) {
-  const depth = len * tabSizeFrac;
-  const tJitter = jitterAmt * 0.05;
-  const points = [{ x: 0, y: 0 }];
-  for (const t of ORGANIC_STEPS) {
-    const tt = t + (rnd() - 0.5) * tJitter;
-    const amp = (rnd() * 2 - 1) * depth * (0.6 + jitterAmt * 0.6);
-    points.push({ x: tt * len, y: amp });
-  }
-  points.push({ x: len, y: 0 });
-  return points;
-}
-
-function segmentProfilePoints(style, len, flip, tabSizeFrac, jitterAmt, rnd) {
-  return style === 'organic'
-    ? organicProfilePoints(len, tabSizeFrac, jitterAmt, rnd)
-    : tabProfilePoints(len, flip, tabSizeFrac, jitterAmt, rnd);
-}
-
-function buildHorizontalBoundary(y0, cols, cellW, style, tabSizeFrac, jitterAmt, rnd) {
+function buildHorizontalBoundary(y0, cols, cellW, tabSizeFrac, jitterAmt, rnd) {
   const points = [{ x: 0, y: y0 }];
   for (let c = 0; c < cols; c++) {
     const flip = rnd() < 0.5 ? 1 : -1;
-    const seg = segmentProfilePoints(style, cellW, flip, tabSizeFrac, jitterAmt, rnd);
+    const seg = tabProfilePoints(cellW, flip, tabSizeFrac, jitterAmt, rnd);
     for (let i = 1; i < seg.length; i++) {
       points.push({ x: c * cellW + seg[i].x, y: y0 + seg[i].y });
     }
@@ -139,11 +109,11 @@ function buildHorizontalBoundary(y0, cols, cellW, style, tabSizeFrac, jitterAmt,
   return points;
 }
 
-function buildVerticalBoundary(x0, rows, cellH, style, tabSizeFrac, jitterAmt, rnd) {
+function buildVerticalBoundary(x0, rows, cellH, tabSizeFrac, jitterAmt, rnd) {
   const points = [{ x: x0, y: 0 }];
   for (let r = 0; r < rows; r++) {
     const flip = rnd() < 0.5 ? 1 : -1;
-    const seg = segmentProfilePoints(style, cellH, flip, tabSizeFrac, jitterAmt, rnd);
+    const seg = tabProfilePoints(cellH, flip, tabSizeFrac, jitterAmt, rnd);
     for (let i = 1; i < seg.length; i++) {
       points.push({ x: x0 + seg[i].y, y: r * cellH + seg[i].x });
     }
@@ -155,7 +125,7 @@ function buildVerticalBoundary(x0, rows, cellH, style, tabSizeFrac, jitterAmt, r
  * Construit le réseau complet de traits de découpe du puzzle.
  * @returns {string[]} tableau de "d" (path data) SVG, en millimètres.
  */
-function generatePuzzleCutPaths(W, H, cols, rows, style, tabSizeFrac, jitterAmt, seed, includeBorder) {
+function generatePuzzleCutPaths(W, H, cols, rows, tabSizeFrac, jitterAmt, seed, includeBorder) {
   const rnd = mulberry32(seed);
   const cellW = W / cols;
   const cellH = H / rows;
@@ -166,12 +136,12 @@ function generatePuzzleCutPaths(W, H, cols, rows, style, tabSizeFrac, jitterAmt,
   }
 
   for (let r = 1; r < rows; r++) {
-    const pts = buildHorizontalBoundary(r * cellH, cols, cellW, style, tabSizeFrac, jitterAmt, rnd);
+    const pts = buildHorizontalBoundary(r * cellH, cols, cellW, tabSizeFrac, jitterAmt, rnd);
     d.push(`M ${pts[0].x.toFixed(3)},${pts[0].y.toFixed(3)}` + catmullRomToBezierPath(pts));
   }
 
   for (let c = 1; c < cols; c++) {
-    const pts = buildVerticalBoundary(c * cellW, rows, cellH, style, tabSizeFrac, jitterAmt, rnd);
+    const pts = buildVerticalBoundary(c * cellW, rows, cellH, tabSizeFrac, jitterAmt, rnd);
     d.push(`M ${pts[0].x.toFixed(3)},${pts[0].y.toFixed(3)}` + catmullRomToBezierPath(pts));
   }
 
@@ -179,8 +149,8 @@ function generatePuzzleCutPaths(W, H, cols, rows, style, tabSizeFrac, jitterAmt,
 }
 
 /* ---------------- Assemblage du SVG final ---------------- */
-function buildSVG({ W, H, cols, rows, style, tabSizeFrac, jitterAmt, seed, strokeColor, includePhoto, includeBorder }) {
-  const cutPaths = generatePuzzleCutPaths(W, H, cols, rows, style, tabSizeFrac, jitterAmt, seed, includeBorder);
+function buildSVG({ W, H, cols, rows, tabSizeFrac, jitterAmt, seed, strokeColor, includePhoto, includeBorder }) {
+  const cutPaths = generatePuzzleCutPaths(W, H, cols, rows, tabSizeFrac, jitterAmt, seed, includeBorder);
   const strokeWidth = 0.1; // mm — trait fin adapté à la découpe vectorielle laser
   const margin = includeBorder ? 1 : 0; // mm — évite que le contour extérieur soit rogné par le viewBox
 
@@ -234,7 +204,6 @@ function renderPreview() {
   const H = parseFloat(els.heightMM.value);
   const cols = parseInt(els.cols.value, 10);
   const rows = parseInt(els.rows.value, 10);
-  const style = document.querySelector('input[name="pieceStyle"]:checked').value;
   const tabSizeFrac = parseInt(els.tabSize.value, 10) / 100;
   const jitterAmt = parseInt(els.jitter.value, 10) / 100;
   const seed = parseInt(els.seed.value, 10) || 1;
@@ -244,7 +213,7 @@ function renderPreview() {
 
   if (!W || !H || !cols || !rows) return;
 
-  lastSVGString = buildSVG({ W, H, cols, rows, style, tabSizeFrac, jitterAmt, seed, strokeColor, includePhoto, includeBorder });
+  lastSVGString = buildSVG({ W, H, cols, rows, tabSizeFrac, jitterAmt, seed, strokeColor, includePhoto, includeBorder });
   els.preview.innerHTML = lastSVGString;
   els.downloadBtn.disabled = false;
 }
