@@ -182,7 +182,7 @@ function generatePuzzleCutPaths(W, H, cols, rows, style, tabSizeFrac, jitterAmt,
 function buildSVG({ W, H, cols, rows, style, tabSizeFrac, jitterAmt, seed, strokeColor, includePhoto, includeBorder }) {
   const cutPaths = generatePuzzleCutPaths(W, H, cols, rows, style, tabSizeFrac, jitterAmt, seed, includeBorder);
   const strokeWidth = 0.1; // mm — trait fin adapté à la découpe vectorielle laser
-  const margin = 1; // mm — évite que le contour extérieur soit rogné par le viewBox
+  const margin = includeBorder ? 1 : 0; // mm — évite que le contour extérieur soit rogné par le viewBox
 
   let photoLayer = '';
   if (includePhoto && imageDataURL) {
