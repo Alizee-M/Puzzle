@@ -2,6 +2,7 @@ services:
   puzzle-laser-generator:
     build: .
     image: puzzle-laser-generator:latest
+    pull_policy: never
     container_name: puzzle-laser-generator
     restart: unless-stopped
     ports:
