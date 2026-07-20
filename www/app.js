@@ -176,6 +176,7 @@ function generatePuzzleCutPaths(W, H, cols, rows, style, tabSizeFrac, jitterAmt,
 function buildSVG({ W, H, cols, rows, style, tabSizeFrac, jitterAmt, seed, strokeColor, includePhoto, includeBorder }) {
   const cutPaths = generatePuzzleCutPaths(W, H, cols, rows, style, tabSizeFrac, jitterAmt, seed, includeBorder);
   const strokeWidth = 0.1; // mm — trait fin adapté à la découpe vectorielle laser
+  const margin = 1; // mm — évite que le contour extérieur soit rogné par le viewBox
 
   let photoLayer = '';
   if (includePhoto && imageDataURL) {
@@ -188,9 +189,14 @@ function buildSVG({ W, H, cols, rows, style, tabSizeFrac, jitterAmt, seed, strok
     ${cutPaths.map((d) => `<path d="${d}" />`).join('\n    ')}
   </g>`;
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}mm" height="${H}mm" viewBox="0 0 ${W} ${H}">
+  const totalW = W + margin * 2;
+  const totalH = H + margin * 2;
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${totalW}mm" height="${totalH}mm" viewBox="0 0 ${totalW} ${totalH}">
+  <g transform="translate(${margin}, ${margin})">
   ${photoLayer}
   ${cutLayer}
+  </g>
 </svg>`;
 }
 
